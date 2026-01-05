@@ -41,18 +41,31 @@ def main():
             username = get_username()
             password = get_password()
 
-            if not username and not password:
-                print("Both username and password are required.")
-                continue
+            if not username:
+                print("Username is optional. Please provide private key path if you want to connect with it.")
+                private_key_path = input("Private key path (press Enter to skip): ")
+                if private_key_path.strip() == "":
+                    continue
+                else:
+                    ssh = establish_ssh_connection(host, None, password=None, private_key=private_key_path)
+            elif not password:
+                print("Password is optional. Please provide private key path if you want to connect with it.")
+                private_key_path = input("Private key path (press Enter to skip): ")
+                if private_key_path.strip() == "":
+                    continue
+                else:
+                    ssh = establish_ssh_connection(host, username, None, private_key=private_key_path)
+            else:
+                ssh = establish_ssh_connection(host, username, password=password)
 
-            ssh = establish_ssh_connection(host, username or None, password=password)
             if ssh:
                 # Save the new connection to file
                 connection_name = input("Name for this connection: ")
                 connection_manager.connections[connection_name] = {
                     'host': host,
                     'username': username or None,
-                    'password': password or None
+                    'password': password or None,
+                    'private_key_path': private_key_path or None
                 }
                 with open(args.file_path, 'w') as f:
                     json.dump(connection_manager.connections, f)
@@ -65,8 +78,13 @@ def main():
                     host = details['host']
                     username = details.get('username') or None
                     password = details.get('password')
+                    private_key_path = details.get('private_key_path')
 
-                    ssh = establish_ssh_connection(host, username, password=password)
+                    if not username and not password and not private_key_path:
+                        print("No authentication method provided. Please provide a valid combination.")
+                        continue
+
+                    ssh = establish_ssh_connection(host, username, password=password, private_key=private_key_path)
 
                     if ssh:
                         # Establish SSH session and execute commands
