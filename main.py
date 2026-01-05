@@ -1,4 +1,5 @@
 import argparse
+import paramiko
 from connection_manager import ConnectionManager
 from ssh_utils import establish_ssh_connection
 
@@ -19,7 +20,7 @@ def get_password():
     return password
 
 def main():
-    parser = argparse.ArgumentParser(description='SSH Terminal Tool')
+    parser = argparse.ArgumentParser(description='SSH Manager')
     parser.add_argument('--file-path', help='Path to file containing saved connections')
     args = parser.parse_args()
 
@@ -38,37 +39,22 @@ def main():
         if choice.lower() == 'n':
             # Create a new connection
             host = input("Host: ")
-            username = get_username()
-            password = get_password()
 
-            if not username:
-                print("Username is optional. Please provide private key path if you want to connect with it.")
-                private_key_path = input("Private key path (press Enter to skip): ")
-                if private_key_path.strip() == "":
+            private_key_path_input = input("Private key path (press Enter to skip): ")
+            username_input = get_username()
+
+            if private_key_path_input.strip() != "":
+                try:
+                    paramiko.RSAKey.from_private_key_file(private_key_path_input)
+                    ssh = establish_ssh_connection(host, private_key=private_key_path_input)
+                except Exception as e:
+                    print(f"Error reading private key file: {e}")
                     continue
-                else:
-                    ssh = establish_ssh_connection(host, None, password=None, private_key=private_key_path)
-            elif not password:
-                print("Password is optional. Please provide private key path if you want to connect with it.")
-                private_key_path = input("Private key path (press Enter to skip): ")
-                if private_key_path.strip() == "":
-                    continue
-                else:
-                    ssh = establish_ssh_connection(host, username, None, private_key=private_key_path)
+            elif username_input == "":
+                ssh = establish_ssh_connection(host)
             else:
-                ssh = establish_ssh_connection(host, username, password=password)
-
-            if ssh:
-                # Save the new connection to file
-                connection_name = input("Name for this connection: ")
-                connection_manager.connections[connection_name] = {
-                    'host': host,
-                    'username': username or None,
-                    'password': password or None,
-                    'private_key_path': private_key_path or None
-                }
-                with open(args.file_path, 'w') as f:
-                    json.dump(connection_manager.connections, f)
+                password_input = get_password()
+                ssh = establish_ssh_connection(host, username=username_input or None, password=password_input)
         else:
             try:
                 connection_index = int(choice) - 1
@@ -80,11 +66,10 @@ def main():
                     password = details.get('password')
                     private_key_path = details.get('private_key_path')
 
-                    if not username and not password and not private_key_path:
-                        print("No authentication method provided. Please provide a valid combination.")
-                        continue
-
-                    ssh = establish_ssh_connection(host, username, password=password, private_key=private_key_path)
+                    if not username and not password:
+                        ssh = establish_ssh_connection(host)
+                    else:
+                        ssh = establish_ssh_connection(host, username, password=password, private_key=private_key_path)
 
                     if ssh:
                         # Establish SSH session and execute commands
