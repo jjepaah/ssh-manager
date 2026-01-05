@@ -1,0 +1,12 @@
+{
+  "Example": {
+    "host": "example.com",
+    "username": "user1",
+    "password": "password123"
+  },
+  "ThePrimeTimeShop": {
+    "host": "terminal.shop",
+    "username": "user",
+    "password": "user"
+  }
+}
