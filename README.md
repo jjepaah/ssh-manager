@@ -5,6 +5,8 @@ main.py                     : Entry point of tool<br />
 connection_manager.py       : Handles fetching saved connections from file and provides options<br />
 ssh_utils.py                : Contains utility functions for establishing SSH connections<br />
 
+Dependencies                : paramiko, setuptools, wheel
+
 
 ## **=== Main ===**<br />
 This script uses the `argparse` library to parse command-line arguments, specifically the path to the file containing saved connections. It then enters a loop where it
