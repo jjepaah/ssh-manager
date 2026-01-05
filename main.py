@@ -2,8 +2,24 @@ import argparse
 from connection_manager import ConnectionManager
 from ssh_utils import establish_ssh_connection
 
+def get_username():
+    return input("Input username? (press Enter to skip): ")
+
+def get_password():
+    password = None
+    while True:
+        response = input("Input password? (press Enter to skip): ")
+        if response.strip() == "":
+            continue
+        elif len(response) < 8:
+            print("Password must be at least 8 characters long.")
+        else:
+            password = response
+            break
+    return password
+
 def main():
-    parser = argparse.ArgumentParser(description='SSH Manager')
+    parser = argparse.ArgumentParser(description='SSH Terminal Tool')
     parser.add_argument('--file-path', help='Path to file containing saved connections')
     args = parser.parse_args()
 
@@ -22,22 +38,24 @@ def main():
         if choice.lower() == 'n':
             # Create a new connection
             host = input("Host: ")
-            username = input("Username: ")
-            password = getpass.getpass("Password: ")
-            private_key = None  # For now, assume no private key is used
+            username = get_username()
+            password = get_password()
 
-            ssh = establish_ssh_connection(host, username, password=password)
-            # Save the new connection to file
-            connection_name = input("Name for this connection: ")
-            connection_manager.connections[connection_name] = {
-                'host': host,
-                'username': username,
-                'password': password,
-                'private_key': private_key
-            }
-            with open(args.file_path, 'w') as f:
-                json.dump(connection_manager.connections, f)
+            if not username and not password:
+                print("Both username and password are required.")
+                continue
 
+            ssh = establish_ssh_connection(host, username or None, password=password)
+            if ssh:
+                # Save the new connection to file
+                connection_name = input("Name for this connection: ")
+                connection_manager.connections[connection_name] = {
+                    'host': host,
+                    'username': username or None,
+                    'password': password or None
+                }
+                with open(args.file_path, 'w') as f:
+                    json.dump(connection_manager.connections, f)
         else:
             try:
                 connection_index = int(choice) - 1
@@ -45,14 +63,15 @@ def main():
                     connection_name = connection_manager.get_saved_connections()[connection_index]
                     details = connection_manager.get_connection_details(connection_name)
                     host = details['host']
-                    username = details['username']
-                    password = details['password']
+                    username = details.get('username') or None
+                    password = details.get('password')
 
                     ssh = establish_ssh_connection(host, username, password=password)
 
-                    # Establish SSH session and execute commands
-                    stdin, stdout, stderr = ssh.exec_command('ls -l')
-                    print(stdout.read().decode())
+                    if ssh:
+                        # Establish SSH session and execute commands
+                        stdin, stdout, stderr = ssh.exec_command('ls -l')
+                        print(stdout.read().decode())
                 else:
                     print("Invalid connection number")
             except ValueError as e:
