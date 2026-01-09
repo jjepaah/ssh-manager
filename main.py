@@ -1,5 +1,4 @@
 import argparse
-#import paramiko
 from connection_manager import ConnectionManager
 from ssh_utils import establish_ssh_connection
 
@@ -12,8 +11,6 @@ def get_password():
         response = input("Input password? (press Enter to skip): ")
         if response.strip() == "":
             continue
-        elif len(response) < 8:
-            print("Password must be at least 8 characters long.")
         else:
             password = response
             break
@@ -24,24 +21,27 @@ def main():
     parser.add_argument('--file-path', help='Path to file containing saved connections')
     args = parser.parse_args()
 
+    """
     if not args.file_path:
         print("Error: --file-path is required")
         return 1
-
+    """
+    
     connection_manager = ConnectionManager(args.file_path)
 
     while True:
         print("\nOptions:")
-        for i, connection_name in enumerate(connection_manager.get_saved_connections()):
-            print(f"{i+1}. {connection_name}")
+
+        if args.file_path:
+            for i, connection_name in enumerate(connection_manager.get_saved_connections()):
+                print(f"{i+1}. {connection_name}")
 
         choice = input("Enter the number of your chosen connection, or 'n' to create a new one: ")
         if choice.lower() == 'n':
             # Create a new connection
             host = input("Host: ")
-
-            private_key_path_input = input("Private key path (press Enter to skip): ")
             username_input = get_username()
+            private_key_path_input = input("Private key path (press Enter to skip): ")
 
             if private_key_path_input.strip() != "":
                 try:
