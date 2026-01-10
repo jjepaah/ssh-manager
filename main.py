@@ -26,15 +26,16 @@ def main():
         print("Error: --file-path is required")
         return 1
     """
-    
-    connection_manager = ConnectionManager(args.file_path)
 
     while True:
         print("\nOptions:")
 
         if args.file_path:
+            connection_manager = ConnectionManager(args.file_path)
             for i, connection_name in enumerate(connection_manager.get_saved_connections()):
                 print(f"{i+1}. {connection_name}")
+        else:
+            print("No connections found")
 
         choice = input("Enter the number of your chosen connection, or 'n' to create a new one: ")
         if choice.lower() == 'n':
